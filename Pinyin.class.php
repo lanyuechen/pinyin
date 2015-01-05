@@ -9,11 +9,11 @@ class Pinyin {
 
 	function __construct() {
 		$tmp = file_get_contents('./pinyin-1st.json');
-		$this->map_1st = json_decode($tmp, 'array');
+		$this->map_1st = json_decode($tmp, true);
 		$this->code = array_values($this->map_1st);
 		$this->py = array_keys($this->map_1st);
 		$tmp = file_get_contents('./pinyin-2nd.json');
-		$this->map_2nd = json_decode($tmp, 'array');
+		$this->map_2nd = json_decode($tmp, true);
 	}
 
 	public function get($str) {
