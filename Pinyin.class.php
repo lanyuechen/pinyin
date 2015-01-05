@@ -1,63 +1,55 @@
 <?php
+
 class Pinyin {
 
+	var $map_1st;
+	var $map_2nd;
+
+	function __construct() {
+		$tmp = file_get_contents('./pinyin-1st.json');
+		$this->map_1st = json_decode($tmp);
+		$tmp = file_get_contents('./pinyin-2nd.json');
+		$this->map_2nd = json_decode($tmp);
+	}
+
 	public function get($str) {
-		$str = self :: utf8_to_gbk($str);
-		$res = '';
-		for($i=0; $i<strlen($str); $i++){
-			$foo = self :: get_code($str);
-			$res .= self :: pin($foo);
-		}
+		$str = $this->utf8_to_gbk($str);
+		$res = $this->pins($str);
 		return strtolower($res);
 	}
 
-	protected function get_map(){
-		$pytable = S('pytable');
-		if (!$pytable) {
-			$pytable = file_get_contents(__DIR__ . '/pinyin-1st.json');
-			$pytable = json_decode($pytable);
-			S('pytable', $pytable);
-		}
-		return $pytable;
+	private function utf8_to_gbk($str){
+		return iconv('UTF-8', 'GB2312//IGNORE', $str);
 	}
 
-	protected function get_mapEx(){
-		$pytableEx = S('pytableEx');
-		if (!$pytableEx) {
-			$pytableEx = file_get_contents(__DIR__ . '/pinyin-2nd.json');
-			$pytableEx = json_decode($pytableEx);
-			S('pytableEx', $pytableEx);
-		}
-		return $pytableEx;
-	}
-
-	protected function get_code($foo){
-		$p = ord(substr($foo, 0, 1));
-		if($p>160) {
-			$p = $p - 160;
-			$q = ord(substr($foo, 1, 1)) - 160; 
-			$p = $p * 100 + $q; 
-		}
-		return $p;
-	}
-
-	protected function utf8_to_gbk($foo){
-		return iconv('UTF-8', 'GB2312//IGNORE', $foo);
-	}
-
-	protected function pin($foo){
-		$map = self :: get_map();
+	private function code_to_py($code){
+		$map = $this->map_1st;
 		foreach ($map as $k => $v) {
-			if($foo <= $v){
+			if($code <= $v){
 				return $k;
 			}
 		}
-		$mapEx = self :: get_mapEx();
+		$mapEx = $this->map_2nd;
 		foreach ($mapEx as $k => $v) {
-			if(in_array($foo, $v)){
+			if(in_array($code, $v)){
 				return $k;
 			}
 		}
 		return '';
 	}
+
+	private function pins($str){
+		$res = '';
+		for($i = 0; $i < strlen($str); $i++){
+			$code = ord(substr($str, $i, 1));
+			if($code > 160) {
+				$code = $code - 160;
+				$foo = ord(substr($str, ++$i, 1)) - 160; 
+				$code = $code * 100 + $foo; 
+			}
+			$res .= $this->code_to_py($code);
+		}
+		return $res;
+	}
 }
+
